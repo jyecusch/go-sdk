@@ -51,7 +51,7 @@ type schedule struct {
 
 var _ Schedule = (*schedule)(nil)
 
-// NewSchedule - Create a new Schedule resource
+// NewSchedule create a new Schedule with the given name.
 func NewSchedule(name string) Schedule {
 	return &schedule{
 		name:    name,

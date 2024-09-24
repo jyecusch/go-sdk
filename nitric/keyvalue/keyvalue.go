@@ -42,7 +42,7 @@ type kvstore struct {
 	registerChan <-chan workers.RegisterResult
 }
 
-// NewKv - Create a new Key/Value store resource
+// NewKv creates a new key/value store resource with the given name.
 func NewKv(name string) *kvstore {
 	kvstore := &kvstore{
 		name:         name,

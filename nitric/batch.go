@@ -64,7 +64,7 @@ type JobResourceRequirements struct {
 	Gpus   int64
 }
 
-// NewJob creates a new Job with the give name.
+// NewJob creates a new job resource with the give name.
 func NewJob(name string) JobReference {
 	job := &jobReference{
 		name:    name,

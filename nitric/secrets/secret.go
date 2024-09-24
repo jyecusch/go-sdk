@@ -41,7 +41,7 @@ type secret struct {
 	registerChan <-chan workers.RegisterResult
 }
 
-// NewSecret - Create a new Secret resource
+// NewSecret create a new secret resource with the given name.
 func NewSecret(name string) *secret {
 	secret := &secret{
 		name:    name,
