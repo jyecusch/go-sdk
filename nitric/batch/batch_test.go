@@ -32,7 +32,7 @@ var _ = Describe("File", func() {
 	var (
 		ctrl            *gomock.Controller
 		mockBatchClient *mock_v1.MockBatchClient
-		j               Job
+		j               *BatchClient
 		jobName         string
 		ctx             context.Context
 	)
@@ -42,7 +42,7 @@ var _ = Describe("File", func() {
 		mockBatchClient = mock_v1.NewMockBatchClient(ctrl)
 
 		jobName = "test-job"
-		j = &jobImpl{
+		j = &BatchClient{
 			name:        jobName,
 			batchClient: mockBatchClient,
 		}

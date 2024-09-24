@@ -12,34 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package workers
+package nitric
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"google.golang.org/grpc"
 
-	"github.com/nitrictech/go-sdk/api/errors"
-	"github.com/nitrictech/go-sdk/api/errors/codes"
+	errorsstd "errors"
+
 	"github.com/nitrictech/go-sdk/constants"
-	"github.com/nitrictech/go-sdk/handler/job"
+	"github.com/nitrictech/go-sdk/nitric/batch"
+	"github.com/nitrictech/go-sdk/nitric/errors"
+	"github.com/nitrictech/go-sdk/nitric/errors/codes"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 )
 
-type JobWorker struct {
+type jobWorker struct {
 	client              v1.JobClient
 	registrationRequest *v1.RegistrationRequest
-	middleware          job.Middleware
+	middleware          Middleware[batch.Ctx]
 }
-type JobWorkerOpts struct {
+type jobWorkerOpts struct {
 	RegistrationRequest *v1.RegistrationRequest
-	Middleware          job.Middleware
+	Middleware          Middleware[batch.Ctx]
 }
 
 // Start implements Worker.
-func (s *JobWorker) Start(ctx context.Context) error {
+func (s *jobWorker) Start(ctx context.Context) error {
 	initReq := &v1.ClientMessage{
 		Content: &v1.ClientMessage_RegistrationRequest{
 			RegistrationRequest: s.registrationRequest,
@@ -57,11 +58,11 @@ func (s *JobWorker) Start(ctx context.Context) error {
 		return err
 	}
 	for {
-		var ctx *job.Context
+		var ctx *batch.Ctx
 
 		resp, err := stream.Recv()
 
-		if err == io.EOF {
+		if errorsstd.Is(err, io.EOF) {
 			err = stream.CloseSend()
 			if err != nil {
 				return err
@@ -69,11 +70,10 @@ func (s *JobWorker) Start(ctx context.Context) error {
 
 			return nil
 		} else if err == nil && resp.GetRegistrationResponse() != nil {
-			// Job worker has connected with Nitric server
-			fmt.Println("JobWorker connected with Nitric server")
+			// Do nothing
 		} else if err == nil && resp.GetJobRequest() != nil {
-			ctx = job.NewJobContext(resp)
-			err = s.middleware(ctx, job.NoOpHandler)
+			ctx = batch.NewCtx(resp)
+			ctx, err = s.middleware(ctx, dummyHandler)
 			if err != nil {
 				ctx.WithError(err)
 			}
@@ -88,25 +88,19 @@ func (s *JobWorker) Start(ctx context.Context) error {
 	}
 }
 
-func NewJobWorker(opts *JobWorkerOpts) *JobWorker {
-	ctx, _ := context.WithTimeout(context.TODO(), constants.NitricDialTimeout())
-
-	conn, err := grpc.DialContext(
-		ctx,
-		constants.NitricAddress(),
-		constants.DefaultOptions()...,
-	)
+func newJobWorker(opts *jobWorkerOpts) *jobWorker {
+	conn, err := grpc.NewClient(constants.NitricAddress(), constants.DefaultOptions()...)
 	if err != nil {
 		panic(errors.NewWithCause(
 			codes.Unavailable,
-			"NewJobWorker: Unable to reach StorageListenerClient",
+			"NewJobWorker: Unable to reach JobClient",
 			err,
 		))
 	}
 
 	client := v1.NewJobClient(conn)
 
-	return &JobWorker{
+	return &jobWorker{
 		client:              client,
 		registrationRequest: opts.RegistrationRequest,
 		middleware:          opts.Middleware,
