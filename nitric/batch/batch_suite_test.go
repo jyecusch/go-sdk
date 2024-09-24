@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-<<<<<<<< Updated upstream:nitric/topics/response.go
-package topics
-
-type Response struct {
-	Success bool
-========
 package batch_test
 
 import (
@@ -30,5 +24,4 @@ import (
 func TestBatch(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Batch (Jobs) Suite")
->>>>>>>> Stashed changes:api/batch/batch_suite_test.go
 }
