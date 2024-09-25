@@ -58,10 +58,14 @@ type jobReference struct {
 	registerChan <-chan RegisterResult
 }
 
+// JobResourceRequirements defines the resource requirements for a job
 type JobResourceRequirements struct {
-	Cpus   float32
+	// Cpus is the number of CPUs/vCPUs to allocate to the job
+	Cpus      float32
+	// Memory is the amount of memory in MiB to allocate to the job
 	Memory int64
-	Gpus   int64
+	// Gpus is the number of GPUs to allocate to the job
+	Gpus      int64
 }
 
 // NewJob creates a new job resource with the give name.

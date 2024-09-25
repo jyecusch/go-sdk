@@ -51,6 +51,7 @@ func (s *BatchClient) Submit(ctx context.Context, data map[string]interface{}) e
 
 	// Create the request
 	req := &v1.JobSubmitRequest{
+		JobName: s.name,
 		Data: &v1.JobData{
 			Data: &v1.JobData_Struct{
 				Struct: dataStruct,
