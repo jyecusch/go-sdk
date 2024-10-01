@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nitric
+package batch
 
 import (
 	"context"
@@ -23,20 +23,20 @@ import (
 	errorsstd "errors"
 
 	"github.com/nitrictech/go-sdk/constants"
-	"github.com/nitrictech/go-sdk/nitric/batch"
 	"github.com/nitrictech/go-sdk/nitric/errors"
 	"github.com/nitrictech/go-sdk/nitric/errors/codes"
+	"github.com/nitrictech/go-sdk/nitric/handlers"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 )
 
 type jobWorker struct {
 	client              v1.JobClient
 	registrationRequest *v1.RegistrationRequest
-	handler             Handler[batch.Ctx]
+	handler             handlers.Handler[Ctx]
 }
 type jobWorkerOpts struct {
 	RegistrationRequest *v1.RegistrationRequest
-	Handler             Handler[batch.Ctx]
+	Handler             handlers.Handler[Ctx]
 }
 
 // Start implements Worker.
@@ -58,7 +58,7 @@ func (s *jobWorker) Start(ctx context.Context) error {
 		return err
 	}
 	for {
-		var ctx *batch.Ctx
+		var ctx *Ctx
 
 		resp, err := stream.Recv()
 
@@ -72,7 +72,7 @@ func (s *jobWorker) Start(ctx context.Context) error {
 		} else if err == nil && resp.GetRegistrationResponse() != nil {
 			// Do nothing
 		} else if err == nil && resp.GetJobRequest() != nil {
-			ctx = batch.NewCtx(resp)
+			ctx = NewCtx(resp)
 			err = s.handler(ctx)
 			if err != nil {
 				ctx.WithError(err)
