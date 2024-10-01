@@ -42,14 +42,8 @@ type JobReference interface {
 	//	func() error
 	//	func(*batch.Ctx)
 	//	func(*batch.Ctx) error
-	//	func(*batch.Ctx) *batch.Ctx
-	//	func(*batch.Ctx) (*batch.Ctx, error)
-	//	func(*batch.Ctx, Handler[batch.Ctx]) *batch.Ctx
-	//	func(*batch.Ctx, Handler[batch.Ctx]) error
-	//	func(*batch.Ctx, Handler[batch.Ctx]) (*batch.Ctx, error)
-	//	Middleware[batch.Ctx]
 	//	Handler[batch.Ctx]
-	Handler(JobResourceRequirements, ...interface{})
+	Handler(JobResourceRequirements, interface{})
 }
 
 type jobReference struct {
@@ -61,11 +55,11 @@ type jobReference struct {
 // JobResourceRequirements defines the resource requirements for a job
 type JobResourceRequirements struct {
 	// Cpus is the number of CPUs/vCPUs to allocate to the job
-	Cpus      float32
+	Cpus float32
 	// Memory is the amount of memory in MiB to allocate to the job
 	Memory int64
 	// Gpus is the number of GPUs to allocate to the job
-	Gpus      int64
+	Gpus int64
 }
 
 // NewJob creates a new job resource with the give name.
@@ -114,7 +108,7 @@ func (j *jobReference) Allow(permission JobPermission, permissions ...JobPermiss
 	return batch.NewBatchClient(j.name)
 }
 
-func (j *jobReference) Handler(reqs JobResourceRequirements, middleware ...interface{}) {
+func (j *jobReference) Handler(reqs JobResourceRequirements, handler interface{}) {
 	registrationRequest := &batchpb.RegistrationRequest{
 		JobName: j.name,
 		Requirements: &batchpb.JobResourceRequirements{
@@ -124,16 +118,14 @@ func (j *jobReference) Handler(reqs JobResourceRequirements, middleware ...inter
 		},
 	}
 
-	middlewares, err := interfacesToMiddleware[batch.Ctx](middleware)
+	typedHandler, err := interfaceToHandler[batch.Ctx](handler)
 	if err != nil {
 		panic(err)
 	}
 
-	composedHandler := ComposeMiddleware(middlewares...)
-
 	opts := &jobWorkerOpts{
 		RegistrationRequest: registrationRequest,
-		Middleware:          composedHandler,
+		Handler:             typedHandler,
 	}
 
 	worker := newJobWorker(opts)

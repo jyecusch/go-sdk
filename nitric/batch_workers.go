@@ -32,11 +32,11 @@ import (
 type jobWorker struct {
 	client              v1.JobClient
 	registrationRequest *v1.RegistrationRequest
-	middleware          Middleware[batch.Ctx]
+	handler             Handler[batch.Ctx]
 }
 type jobWorkerOpts struct {
 	RegistrationRequest *v1.RegistrationRequest
-	Middleware          Middleware[batch.Ctx]
+	Handler             Handler[batch.Ctx]
 }
 
 // Start implements Worker.
@@ -73,7 +73,7 @@ func (s *jobWorker) Start(ctx context.Context) error {
 			// Do nothing
 		} else if err == nil && resp.GetJobRequest() != nil {
 			ctx = batch.NewCtx(resp)
-			ctx, err = s.middleware(ctx, dummyHandler)
+			err = s.handler(ctx)
 			if err != nil {
 				ctx.WithError(err)
 			}
@@ -103,6 +103,6 @@ func newJobWorker(opts *jobWorkerOpts) *jobWorker {
 	return &jobWorker{
 		client:              client,
 		registrationRequest: opts.RegistrationRequest,
-		middleware:          opts.Middleware,
+		handler:             opts.Handler,
 	}
 }
