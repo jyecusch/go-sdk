@@ -17,7 +17,7 @@ package batch
 import (
 	"fmt"
 
-	"github.com/nitrictech/go-sdk/nitric/handlers"
+	"github.com/nitrictech/go-sdk/internal/handlers"
 	"github.com/nitrictech/go-sdk/nitric/workers"
 	batchpb "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/resources/v1"
@@ -25,6 +25,8 @@ import (
 
 // JobPermission defines the available permissions on a job
 type JobPermission string
+
+type Handler = handlers.Handler[Ctx]
 
 const (
 	// JobSubmit is required to call Submit on a job.

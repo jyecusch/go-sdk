@@ -25,18 +25,17 @@ import (
 	"github.com/nitrictech/go-sdk/constants"
 	"github.com/nitrictech/go-sdk/nitric/errors"
 	"github.com/nitrictech/go-sdk/nitric/errors/codes"
-	"github.com/nitrictech/go-sdk/nitric/handlers"
 	v1 "github.com/nitrictech/nitric/core/pkg/proto/batch/v1"
 )
 
 type jobWorker struct {
 	client              v1.JobClient
 	registrationRequest *v1.RegistrationRequest
-	handler             handlers.Handler[Ctx]
+	handler             Handler
 }
 type jobWorkerOpts struct {
 	RegistrationRequest *v1.RegistrationRequest
-	Handler             handlers.Handler[Ctx]
+	Handler             Handler
 }
 
 // Start implements Worker.
