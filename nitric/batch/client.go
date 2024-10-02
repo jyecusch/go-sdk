@@ -31,7 +31,7 @@ type BatchClientIn interface {
 	Name() string
 
 	// Submit will submit the provided request to the job.
-	Submit(context.Context, map[string]interface{}) error
+	Submit(ctx context.Context, data map[string]interface{}) error
 }
 
 type BatchClient struct {

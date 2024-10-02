@@ -35,7 +35,7 @@ const (
 
 type JobReference interface {
 	// Allow requests the given permissions to the job.
-	Allow(JobPermission, ...JobPermission) *BatchClient
+	Allow(permission JobPermission, permissions ...JobPermission) *BatchClient
 
 	// Handler will register and start the job task handler that will be called for all task submitted to this job.
 	// Valid function signatures for middleware are:
@@ -45,7 +45,7 @@ type JobReference interface {
 	//	func(*batch.Ctx)
 	//	func(*batch.Ctx) error
 	//	Handler[batch.Ctx]
-	Handler(JobResourceRequirements, interface{})
+	Handler(requirements JobResourceRequirements, handler interface{})
 }
 
 type jobReference struct {
