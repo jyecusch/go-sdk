@@ -35,7 +35,7 @@ const (
 
 type JobReference interface {
 	// Allow requests the given permissions to the job.
-	Allow(JobPermission, ...JobPermission) (*BatchClient, error)
+	Allow(JobPermission, ...JobPermission) *BatchClient
 
 	// Handler will register and start the job task handler that will be called for all task submitted to this job.
 	// Valid function signatures for middleware are:
@@ -84,7 +84,7 @@ func NewJob(name string) JobReference {
 	return job
 }
 
-func (j *jobReference) Allow(permission JobPermission, permissions ...JobPermission) (*BatchClient, error) {
+func (j *jobReference) Allow(permission JobPermission, permissions ...JobPermission) *BatchClient {
 	allPerms := append([]JobPermission{permission}, permissions...)
 
 	actions := []v1.Action{}
@@ -93,21 +93,26 @@ func (j *jobReference) Allow(permission JobPermission, permissions ...JobPermiss
 		case JobSubmit:
 			actions = append(actions, v1.Action_JobSubmit)
 		default:
-			return nil, fmt.Errorf("JobPermission %s unknown", perm)
+			panic(fmt.Errorf("JobPermission %s unknown", perm))
 		}
 	}
 
 	registerResult := <-j.registerChan
 	if registerResult.Err != nil {
-		return nil, registerResult.Err
+		panic(registerResult.Err)
 	}
 
 	err := j.manager.RegisterPolicy(registerResult.Identifier, actions...)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return NewBatchClient(j.name)
+	client, err := NewBatchClient(j.name)
+	if err != nil {
+		panic(err)
+	}
+
+	return client
 }
 
 func (j *jobReference) Handler(reqs JobResourceRequirements, handler interface{}) {
