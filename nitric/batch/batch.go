@@ -45,23 +45,13 @@ type JobReference interface {
 	//	func(*batch.Ctx)
 	//	func(*batch.Ctx) error
 	//	Handler[batch.Ctx]
-	Handler(requirements JobResourceRequirements, handler interface{})
+	Handler(handler interface{}, options ...HandlerOption)
 }
 
 type jobReference struct {
 	name         string
 	manager      *workers.Manager
 	registerChan <-chan workers.RegisterResult
-}
-
-// JobResourceRequirements defines the resource requirements for a job
-type JobResourceRequirements struct {
-	// Cpus is the number of CPUs/vCPUs to allocate to the job
-	Cpus float32
-	// Memory is the amount of memory in MiB to allocate to the job
-	Memory int64
-	// Gpus is the number of GPUs to allocate to the job
-	Gpus int64
 }
 
 // NewJob creates a new job resource with the give name.
@@ -115,14 +105,28 @@ func (j *jobReference) Allow(permission JobPermission, permissions ...JobPermiss
 	return client
 }
 
-func (j *jobReference) Handler(reqs JobResourceRequirements, handler interface{}) {
+func (j *jobReference) Handler(handler interface{}, opts ...HandlerOption) {
+	options := &handlerOptions{}
+
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	registrationRequest := &batchpb.RegistrationRequest{
-		JobName: j.name,
-		Requirements: &batchpb.JobResourceRequirements{
-			Cpus:   reqs.Cpus,
-			Memory: reqs.Memory,
-			Gpus:   reqs.Gpus,
-		},
+		JobName:      j.name,
+		Requirements: &batchpb.JobResourceRequirements{},
+	}
+
+	if options.cpus != nil {
+		registrationRequest.Requirements.Cpus = *options.cpus
+	}
+
+	if options.memory != nil {
+		registrationRequest.Requirements.Memory = *options.memory
+	}
+
+	if options.gpus != nil {
+		registrationRequest.Requirements.Gpus = *options.gpus
 	}
 
 	typedHandler, err := handlers.HandlerFromInterface[Ctx](handler)
@@ -130,11 +134,11 @@ func (j *jobReference) Handler(reqs JobResourceRequirements, handler interface{}
 		panic(err)
 	}
 
-	opts := &jobWorkerOpts{
+	jobOpts := &jobWorkerOpts{
 		RegistrationRequest: registrationRequest,
 		Handler:             typedHandler,
 	}
 
-	worker := newJobWorker(opts)
+	worker := newJobWorker(jobOpts)
 	j.manager.AddWorker("JobWorker:"+j.name, worker)
 }
